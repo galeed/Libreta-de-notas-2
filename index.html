@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Libreta de notas 🐱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#05050a;
+    --bg-1:#0b0b16;
+    --panel:rgba(14,16,28,0.72);
+    --panel-border:rgba(0,229,255,0.35);
+    --cyan:#00e5ff;
+    --violet:#a259ff;
+    --pink:#ff3ea5;
+    --text:#e8f6ff;
+    --text-dim:#7d8aa3;
+    --font-display:'Orbitron', sans-serif;
+    --font-mono:'Share Tech Mono','JetBrains Mono',monospace;
+  }
+
+  [data-theme="light"]{
+    --bg-0:#eef1f8;
+    --bg-1:#f7f9fd;
+    --panel:rgba(255,255,255,0.75);
+    --panel-border:rgba(0,150,190,0.35);
+    --cyan:#0091a8;
+    --violet:#6d3fc9;
+    --pink:#c72a7a;
+    --text:#0d1526;
+    --text-dim:#5b6579;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    height:100%;
+    background:var(--bg-0);
+    color:var(--text);
+    font-family:var(--font-mono);
+    overflow-x:hidden;
+    transition:background .35s ease, color .35s ease;
+  }
+
+  body{
+    min-height:100dvh;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% -10%, rgba(162,89,255,0.28), transparent 60%),
+      radial-gradient(ellipse 70% 55% at 105% 0%, rgba(0,229,255,0.22), transparent 55%),
+      radial-gradient(ellipse 90% 70% at 50% 120%, rgba(255,62,165,0.14), transparent 60%),
+      var(--bg-0);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:clamp(12px,3vw,32px);
+  }
+
+  .scanlines{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:5;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode:overlay;
+    opacity:.5;
+  }
+
+  .app{
+    width:100%;
+    max-width:920px;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(10px,2vw,18px);
+    flex:1;
+    min-height:0;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .brand .cat{
+    font-size:clamp(22px,4vw,30px);
+    filter:drop-shadow(0 0 6px var(--cyan));
+  }
+
+  .brand h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(15px,3.6vw,22px);
+    letter-spacing:0.06em;
+    margin:0;
+    color:var(--text);
+    text-shadow:0 0 10px rgba(0,229,255,0.35);
+  }
+
+  .brand .sub{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--violet);
+    margin-top:2px;
+  }
+
+  #themeToggle{
+    width:44px;
+    height:44px;
+    border-radius:12px;
+    border:1px solid var(--panel-border);
+    background:var(--panel);
+    backdrop-filter:blur(10px);
+    color:var(--text);
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .15s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  #themeToggle:hover{
+    box-shadow:0 0 16px rgba(0,229,255,0.35);
+    border-color:var(--cyan);
+  }
+  #themeToggle:active{transform:scale(0.92);}
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .btn{
+    font-family:var(--font-mono);
+    font-size:clamp(12px,2.6vw,14px);
+    letter-spacing:0.03em;
+    color:var(--text);
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    backdrop-filter:blur(10px);
+    padding:10px 16px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:border-color .2s ease, box-shadow .2s ease, transform .1s ease, color .2s ease;
+    white-space:nowrap;
+  }
+  .btn:hover{
+    border-color:var(--cyan);
+    box-shadow:0 0 14px rgba(0,229,255,0.28);
+    color:var(--cyan);
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn.danger:hover{
+    border-color:var(--pink);
+    box-shadow:0 0 14px rgba(255,62,165,0.3);
+    color:var(--pink);
+  }
+  .btn .ic{font-size:14px;line-height:1;}
+
+  .editor-wrap{
+    position:relative;
+    flex:1;
+    min-height:280px;
+    border-radius:16px;
+    border:1px solid var(--panel-border);
+    background:var(--panel);
+    backdrop-filter:blur(14px);
+    box-shadow:0 0 0 1px rgba(0,229,255,0.04), 0 20px 60px rgba(0,0,0,0.35);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  .editor-wrap::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    padding:1px;
+    border-radius:16px;
+    background:linear-gradient(135deg, var(--cyan), transparent 30%, transparent 70%, var(--pink));
+    opacity:0.35;
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    pointer-events:none;
+  }
+
+  #editor{
+    flex:1;
+    width:100%;
+    resize:none;
+    border:none;
+    outline:none;
+    background:transparent;
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:clamp(14px,2.4vw,16px);
+    line-height:1.65;
+    padding:clamp(16px,3vw,26px);
+    caret-color:var(--cyan);
+  }
+  #editor::placeholder{color:var(--text-dim);}
+  #editor::selection{background:rgba(0,229,255,0.28);}
+
+  .statusbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px clamp(14px,3vw,22px);
+    border-top:1px solid var(--panel-border);
+    font-size:12px;
+    color:var(--text-dim);
+    letter-spacing:0.03em;
+  }
+
+  .statusbar .save-state{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan);
+    transition:opacity .3s ease;
+  }
+  .dot.idle{opacity:0.25;box-shadow:none;}
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translate(-50%,20px);
+    background:var(--panel);
+    border:1px solid var(--cyan);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:10px;
+    backdrop-filter:blur(12px);
+    box-shadow:0 0 20px rgba(0,229,255,0.35);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:20;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
+  footer{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:0.08em;
+    padding-bottom:4px;
+  }
+
+  @media (max-width:520px){
+    .toolbar{gap:6px;}
+    .btn{padding:9px 12px;font-size:12px;flex:1 1 auto;justify-content:center;}
+    .statusbar{flex-direction:column;align-items:flex-start;gap:4px;}
+  }
+</style>
+</head>
+<body data-theme="dark">
+<div class="scanlines"></div>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="cat">🐱</span>
+      <div>
+        <h1>LIBRETA DE NOTAS</h1>
+        <span class="sub">SCRIPTUM // MICHI LAB</span>
+      </div>
+    </div>
+    <button id="themeToggle" aria-label="Cambiar tema" title="Cambiar tema">☀️</button>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn danger" id="btnNew"><span class="ic">＋</span>Nuevo</button>
+    <button class="btn" id="btnPaste"><span class="ic">📋</span>Pegar</button>
+    <button class="btn" id="btnCopy"><span class="ic">⧉</span>Copiar</button>
+    <button class="btn" id="btnSave"><span class="ic">💾</span>Guardar</button>
+  </div>
+
+  <div class="editor-wrap">
+    <textarea id="editor" placeholder="Escribe aquí tu nota..." spellcheck="false" autofocus></textarea>
+    <div class="statusbar">
+      <span id="counts">0 caracteres | 0 líneas</span>
+      <span class="save-state"><span class="dot idle" id="saveDot"></span><span id="saveLabel">Guardado</span></span>
+    </div>
+  </div>
+
+  <footer>LIBRETA DE NOTAS · MICHI LAB</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const editor = document.getElementById('editor');
+  const counts = document.getElementById('counts');
+  const themeToggle = document.getElementById('themeToggle');
+  const toast = document.getElementById('toast');
+  const saveDot = document.getElementById('saveDot');
+  const saveLabel = document.getElementById('saveLabel');
+
+  const STORAGE_KEY = 'michi-libreta-notas-contenido';
+  const THEME_KEY = 'michi-libreta-notas-tema';
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove('show'), 1800);
+  }
+
+  function updateCounts(){
+    const text = editor.value;
+    const chars = text.length;
+    const lines = text.length === 0 ? 0 : text.split('\n').length;
+    counts.textContent = chars + ' caracter' + (chars===1?'':'es') + ' | ' + lines + ' línea' + (lines===1?'':'s');
+  }
+
+  let saveTimer = null;
+  function markUnsaved(){
+    saveDot.classList.remove('idle');
+    saveLabel.textContent = 'Escribiendo…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      localStorage.setItem(STORAGE_KEY, editor.value);
+      saveDot.classList.add('idle');
+      saveLabel.textContent = 'Guardado';
+    }, 500);
+  }
+
+  editor.addEventListener('input', ()=>{
+    updateCounts();
+    markUnsaved();
+  });
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(saved !== null){
+    editor.value = saved;
+  }
+  updateCounts();
+
+  document.getElementById('btnNew').addEventListener('click', ()=>{
+    if(editor.value.trim().length && !confirm('¿Crear una nota nueva? Se borrará el contenido actual.')) return;
+    editor.value = '';
+    updateCounts();
+    localStorage.setItem(STORAGE_KEY, '');
+    editor.focus();
+    showToast('Nota nueva creada');
+  });
+
+  document.getElementById('btnPaste').addEventListener('click', async ()=>{
+    try{
+      const text = await navigator.clipboard.readText();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.value = editor.value.slice(0,start) + text + editor.value.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + text.length;
+      updateCounts();
+      markUnsaved();
+      showToast('Contenido pegado');
+    }catch(e){
+      showToast('No se pudo acceder al portapapeles');
+    }
+  });
+
+  document.getElementById('btnCopy').addEventListener('click', async ()=>{
+    try{
+      await navigator.clipboard.writeText(editor.value);
+      showToast('Copiado al portapapeles');
+    }catch(e){
+      editor.select();
+      document.execCommand('copy');
+      showToast('Copiado al portapapeles');
+    }
+  });
+
+  document.getElementById('btnSave').addEventListener('click', ()=>{
+    const blob = new Blob([editor.value], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,16).replace('T','_').replace(':','-');
+    a.href = url;
+    a.download = 'nota_' + stamp + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Nota descargada');
+  });
+
+  function applyTheme(theme){
+    document.body.setAttribute('data-theme', theme);
+    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    localStorage.setItem(THEME_KEY, theme);
+  }
+  const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(savedTheme);
+
+  themeToggle.addEventListener('click', ()=>{
+    const current = document.body.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  document.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
+      e.preventDefault();
+      document.getElementById('btnSave').click();
+    }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='n' && document.activeElement === editor){
+      e.preventDefault();
+      document.getElementById('btnNew').click();
+    }
+  });
+})();
+</script>
+</body>
+</html>
